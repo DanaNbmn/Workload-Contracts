@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml.ns import qn
 import os
 import tempfile
 import base64
@@ -25,36 +27,41 @@ def generate_contracts(df, logo_file):
     for _, row in df.iterrows():
         doc = Document()
 
-        # Insert logo if provided
+        # Add logo
         if logo_file:
             doc.add_picture(logo_file, width=Inches(1.5))
+            last_paragraph = doc.paragraphs[-1]
+            last_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
-        doc.add_heading('SERVICE AGREEMENT', 0)
-        doc.add_paragraph('This Agreement is made on: [Insert Date]')
-
+        # Format and title
         title = determine_title(row['Degree'], row['Gender'])
         faculty_name = f"{title} {row['Name']}"
 
-        doc.add_paragraph(
-            "This Service Agreement is entered into between Abu Dhabi University (hereinafter referred to as the \u201cFirst Party\u201d) "
-            "and the employee identified below (hereinafter referred to as the \u201cSecond Party\u201d). This Agreement outlines the terms and "
-            "conditions under which the Second Party will perform academic duties for the specified academic period."
+        heading = doc.add_heading('SERVICE AGREEMENT', level=0)
+        heading.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        p = doc.add_paragraph()
+        run = p.add_run("This Agreement is made on: [Insert Date]")
+        run.font.size = Pt(11)
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
+
+        # Agreement text
+        intro = doc.add_paragraph()
+        intro.add_run("Opening Statement:\n\n").bold = True
+        intro.add_run(
+            "This Service Agreement is entered into between Abu Dhabi University (hereinafter referred to as the \u201cFirst Party\u201d) and the employee identified below (hereinafter referred to as the \u201cSecond Party\u201d). This Agreement outlines the terms and conditions under which the Second Party will perform academic duties for the specified academic period."
         )
 
-        doc.add_heading("Parties:", level=1)
+        doc.add_paragraph("\nParties:").runs[0].bold = True
         doc.add_paragraph("First Party: Abu Dhabi University")
         doc.add_paragraph(
-            f"Second Party:\n"
-            f"\u2022 Name: {faculty_name}\n"
-            f"\u2022 Faculty Type: {row['Faculty Type']}\n"
-            f"\u2022 College/Department: {row['College/Department']}\n"
-            f"\u2022 Faculty ID: {row.get('Faculty ID', 'N/A')}"
+            f"Second Party:\n\u2022 Name: {faculty_name}\n\u2022 Faculty Type: {row['Faculty Type']}\n\u2022 College/Department: {row['College/Department']}\n\u2022 Faculty ID: {row.get('Faculty ID', 'N/A')}"
         )
 
-        doc.add_heading("Contract Period:", level=1)
+        doc.add_paragraph("\nContract Period:").runs[0].bold = True
         doc.add_paragraph(f"Academic Year: AY {row['Academic Year']}\nSemester / Term: {row['Semester/Term']}")
 
-        doc.add_heading("Scope of Work:", level=1)
+        doc.add_paragraph("\nScope of Work:").runs[0].bold = True
         scope_points = [
             "Deliver the assigned course(s) in line with the approved schedule and syllabus.",
             "Submit final student grades in accordance with the official academic calendar.",
@@ -64,10 +71,11 @@ def generate_contracts(df, logo_file):
         for point in scope_points:
             doc.add_paragraph(point, style='List Bullet')
 
-        doc.add_heading("Compensation", level=1)
+        doc.add_paragraph("\nCompensation").runs[0].bold = True
         doc.add_paragraph(f"Total Compensation (AED): {row['Compensation (AED)']}")
 
         table = doc.add_table(rows=1, cols=4)
+        table.style = 'Table Grid'
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = 'Workload Hours'
         hdr_cells[1].text = 'Course Level'
@@ -79,11 +87,11 @@ def generate_contracts(df, logo_file):
         row_cells[2].text = row['Payment Details']
         row_cells[3].text = str(row['Compensation (AED)'])
 
-        doc.add_heading("Instalment Details:", level=1)
+        doc.add_paragraph("\nInstalment Details:").runs[0].bold = True
         doc.add_paragraph("\u2022 The total compensation will be paid in equal monthly instalments over the duration of the contract, with each instalment released upon completion of teaching duties and submission of required deliverables (e.g., grades and course files).")
         doc.add_paragraph("\u2022 Instalment payments are conditional upon adherence to Abu Dhabi University\u2019s academic policies and timelines. Any failure to meet contractual obligations may result in payment delays, adjustments, or withholdings.")
 
-        doc.add_heading("Policies and Compliance", level=1)
+        doc.add_paragraph("\nPolicies and Compliance").runs[0].bold = True
         compliance_points = [
             "Comply with all applicable Abu Dhabi University policies, procedures, and academic regulations.",
             "Demonstrate professionalism and ethical conduct in all teaching-related activities.",
@@ -92,7 +100,7 @@ def generate_contracts(df, logo_file):
         for point in compliance_points:
             doc.add_paragraph(point, style='List Bullet')
 
-        doc.add_heading("Signatures and Acknowledgement", level=1)
+        doc.add_paragraph("\nSignatures and Acknowledgement").runs[0].bold = True
         doc.add_paragraph("By signing this Agreement, all parties confirm their understanding and acceptance of the terms set forth herein.")
 
         sign_table = doc.add_table(rows=4, cols=4)
@@ -116,8 +124,9 @@ def generate_contracts(df, logo_file):
     return output_paths
 
 # --- Streamlit UI ---
-st.title("ADU Faculty Contract Generator")
-st.markdown("Upload your Excel file and logo to generate styled service agreement contracts.")
+st.set_page_config(layout="centered")
+st.title("\U0001F4C4 ADU Faculty Contract Generator")
+st.markdown("Upload your Excel file and logo to generate styled, official faculty service agreement contracts.")
 
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 logo_file = st.file_uploader("Upload ADU Logo (PNG)", type=["png"])
