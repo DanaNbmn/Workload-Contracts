@@ -7,7 +7,6 @@ import os
 import tempfile
 import base64
 
-# --- Determine Title Prefix Based on Degree and Gender ---
 def determine_title(degree, gender):
     degree = str(degree).lower()
     gender = str(gender).lower()
@@ -18,8 +17,10 @@ def determine_title(degree, gender):
     else:
         return "Mr."
 
-# --- Contract Generator ---
 def generate_contracts(df, logo_file):
+    if df is None or df.empty:
+        raise ValueError("Excel file is empty or not correctly read.")
+
     output_paths = []
     temp_dir = tempfile.mkdtemp()
 
@@ -38,32 +39,30 @@ def generate_contracts(df, logo_file):
         heading.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
         date_para = doc.add_paragraph()
-        date_run = date_para.add_run("This Agreement is made on: [Insert Date]")
-        date_run.font.size = Pt(11)
+        date_para.add_run("This Agreement is made on: [Insert Date]").font.size = Pt(11)
         date_para.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
 
         doc.add_paragraph("Opening Statement:", style='Heading 2')
         doc.add_paragraph(
-            "This Service Agreement is entered into between Abu Dhabi University (hereinafter referred to as the \u201cFirst Party\u201d) and the employee identified below (hereinafter referred to as the \u201cSecond Party\u201d). This Agreement outlines the terms and conditions under which the Second Party will perform academic duties for the specified academic period."
+            "This Service Agreement is entered into between Abu Dhabi University (hereinafter referred to as the “First Party”) and the employee identified below (hereinafter referred to as the “Second Party”). This Agreement outlines the terms and conditions under which the Second Party will perform academic duties for the specified academic period."
         )
 
         doc.add_paragraph("\nParties:", style='Heading 2')
         doc.add_paragraph("First Party: Abu Dhabi University")
         doc.add_paragraph(
-            f"Second Party:\n\u2022 Name: {faculty_name}\n\u2022 Faculty Type: {row['Faculty Type']}\n\u2022 College/Department: {row['College/Department']}\n\u2022 Faculty ID: {row.get('Faculty ID', 'N/A')}"
+            f"Second Party:\n• Name: {faculty_name}\n• Faculty Type: {row['Faculty Type']}\n• College/Department: {row['College/Department']}\n• Faculty ID: {row.get('Faculty ID', 'N/A')}"
         )
 
         doc.add_paragraph("\nContract Period:", style='Heading 2')
         doc.add_paragraph(f"Academic Year: AY {row['Academic Year']}\nSemester / Term: {row['Semester/Term']}")
 
         doc.add_paragraph("\nScope of Work:", style='Heading 2')
-        scope_points = [
+        for point in [
             "Deliver the assigned course(s) in line with the approved schedule and syllabus.",
             "Submit final student grades in accordance with the official academic calendar.",
             "Complete and upload all required course documentation (e.g., course files, assessment materials).",
             "Remain available to address student inquiries, including during any approved post-semester extension period."
-        ]
-        for point in scope_points:
+        ]:
             doc.add_paragraph(point, style='List Bullet')
 
         doc.add_paragraph("\nCompensation", style='Heading 2')
@@ -83,16 +82,15 @@ def generate_contracts(df, logo_file):
         row_cells[3].text = str(row['Compensation (AED)'])
 
         doc.add_paragraph("\nInstalment Details:", style='Heading 2')
-        doc.add_paragraph("\u2022 The total compensation will be paid in equal monthly instalments over the duration of the contract, with each instalment released upon completion of teaching duties and submission of required deliverables (e.g., grades and course files).")
-        doc.add_paragraph("\u2022 Instalment payments are conditional upon adherence to Abu Dhabi University\u2019s academic policies and timelines. Any failure to meet contractual obligations may result in payment delays, adjustments, or withholdings.")
+        doc.add_paragraph("• The total compensation will be paid in equal monthly instalments over the duration of the contract, with each instalment released upon completion of teaching duties and submission of required deliverables (e.g., grades and course files).")
+        doc.add_paragraph("• Instalment payments are conditional upon adherence to Abu Dhabi University’s academic policies and timelines. Any failure to meet contractual obligations may result in payment delays, adjustments, or withholdings.")
 
         doc.add_paragraph("\nPolicies and Compliance", style='Heading 2')
-        compliance_points = [
+        for point in [
             "Comply with all applicable Abu Dhabi University policies, procedures, and academic regulations.",
             "Demonstrate professionalism and ethical conduct in all teaching-related activities.",
             "Support institutional quality assurance, accreditation, and review processes as requested."
-        ]
-        for point in compliance_points:
+        ]:
             doc.add_paragraph(point, style='List Bullet')
 
         doc.add_paragraph("\nSignatures and Acknowledgement", style='Heading 2')
@@ -118,9 +116,9 @@ def generate_contracts(df, logo_file):
 
     return output_paths
 
-# --- Streamlit UI ---
+# Streamlit UI
 st.set_page_config(layout="centered")
-st.title("\U0001F4C4 ADU Faculty Contract Generator")
+st.title("📄 ADU Faculty Contract Generator")
 st.markdown("Upload your Excel file and logo to generate styled, official faculty service agreement contracts.")
 
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
@@ -129,7 +127,8 @@ logo_file = st.file_uploader("Upload ADU Logo (PNG)", type=["png"])
 if uploaded_file is not None:
     try:
         df = pd.read_excel(uploaded_file)
-        st.success("Excel file loaded successfully.")
+        st.write("✅ Preview of uploaded data:")
+        st.dataframe(df)
 
         if st.button("Generate Contracts"):
             with st.spinner("Generating contracts..."):
@@ -141,6 +140,6 @@ if uploaded_file is not None:
                     href = f'<a href="data:application/octet-stream;base64,{b64}" download="{os.path.basename(path)}">Download {os.path.basename(path)}</a>'
                     st.markdown(href, unsafe_allow_html=True)
 
-            st.success("All contracts generated and ready for download.")
+            st.success("🎉 All contracts generated and ready for download.")
     except Exception as e:
-        st.error(f"An error occurred while processing the file: {e}")
+        st.error(f"❌ Error: {e}")
