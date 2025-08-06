@@ -5,7 +5,7 @@ import zipfile
 
 st.set_page_config(page_title="Contract Generator", layout="centered")
 
-st.title("📄 Faculty Contract Generatorv2")
+st.title("📄 Faculty Contract Generator")
 
 excel_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 output_dir = "generated_contracts"
@@ -29,4 +29,5 @@ if excel_file:
 
         with open(zip_path, "rb") as f:
             st.download_button("📦 Download All Contracts", f, file_name="contracts.zip")
+
 
