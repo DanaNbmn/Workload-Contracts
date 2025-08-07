@@ -1,7 +1,5 @@
 streamlit
-python-docx
-pandas
-jsonschema
 Document
 BytesIO
+json
 datetime
