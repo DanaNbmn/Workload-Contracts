@@ -36,7 +36,7 @@ with st.form("contract_form"):
         benefits = benefits_data.get(profile_key, {})
 
         # Load the contract template
-        template_path = "/mnt/data/Faculty_Offer_Template.docx"
+        template_path = "Faculty_Offer_Template.docx"
         doc = Document(template_path)
 
         # Replace placeholders
@@ -85,4 +85,5 @@ with st.form("contract_form"):
             file_name=f"Contract_{candidate_name}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+
 
