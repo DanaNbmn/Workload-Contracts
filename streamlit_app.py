@@ -5,7 +5,7 @@ import datetime
 import json
 
 # Load benefit mappings
-with open("/mnt/data/benefits_by_profile.json", "r") as f:
+with open("benefits_by_profile.json", "r") as f:
     benefit_data = json.load(f)
 
 # Load the contract template
@@ -84,3 +84,4 @@ with st.form("contract_form"):
             file_name=f"{candidate_id}_{name}_Contract.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+
