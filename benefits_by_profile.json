@@ -1,7 +1,4 @@
-import json
-
-benefits = {
-    "Professor-Al Ain-Married": {
+"Professor-Al Ain-Married": {
         "Housing Allowance": 45000,
         "Furniture Allowance": 30000,
         "Children School Allowance": 50000,
