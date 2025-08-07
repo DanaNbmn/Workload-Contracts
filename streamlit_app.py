@@ -1,6 +1,3 @@
-# Enhancing the Streamlit app code to include campus, rank, and marital status logic for benefit eligibility
-
-updated_code = """
 import streamlit as st
 from docx import Document
 from io import BytesIO
@@ -75,11 +72,3 @@ if submitted:
         )
     except Exception as e:
         st.error(f"❌ Error generating contract: {str(e)}")
-"""
-
-# Save the updated code to file
-updated_code_path = "/mnt/data/faculty_offer_letter_generator_with_benefits.py"
-with open(updated_code_path, "w") as f:
-    f.write(updated_code)
-
-updated_code_path
