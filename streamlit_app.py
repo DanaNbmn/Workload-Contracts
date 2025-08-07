@@ -1,89 +1,92 @@
 import streamlit as st
+import pandas as pd
 from docx import Document
 from io import BytesIO
 import json
-import datetime
 
-# Load benefits data
+# --- Constants ---
+TEMPLATE_PATH = "Faculty_Offer_Template.docx"
+BENEFITS_PATH = "benefits_by_profile.json"
+
+# --- Load Benefits Profiles ---
 @st.cache_data
 def load_benefits():
-    with open("benefits_by_profile.json", "r") as f:
+    with open(BENEFITS_PATH, "r") as f:
         return json.load(f)
 
 benefits_data = load_benefits()
 
-# UI Inputs
+# --- Helper Function to Generate Contract ---
+def generate_contract(context):
+    doc = Document(TEMPLATE_PATH)
+    for p in doc.paragraphs:
+        for key, value in context.items():
+            if f"{{{{{key}}}}}" in p.text:
+                inline = p.runs
+                for i in range(len(inline)):
+                    if f"{{{{{key}}}}}" in inline[i].text:
+                        inline[i].text = inline[i].text.replace(f"{{{{{key}}}}}", str(value))
+    return doc
+
+# --- UI ---
 st.title("📄 Faculty Contract Generator")
-st.markdown("Automatically generates contract with benefits based on role, campus, and marital status.")
+
+st.markdown("Please fill out the required details below and select the applicable rank, campus, and marital status to generate the contract.")
 
 with st.form("contract_form"):
-    candidate_id = st.text_input("Candidate ID")
-    candidate_name = st.text_input("Candidate Name")
+    # Personal Details
+    emp_id = st.text_input("Employee ID")
+    name = st.text_input("Full Name")
     phone = st.text_input("Phone Number")
-    email = st.text_input("Email ID")
-    designation = st.selectbox("Designation (Rank)", ["Professor", "Senior Instructor"])
-    marital_status = st.selectbox("Marital Status", ["Married", "Single"])
-    campus = st.selectbox("Campus", ["Al Ain", "AD/Dubai"])
-    college = st.text_input("College or Department")
+    email = st.text_input("Email Address")
+    position_title = st.text_input("Position Title")
+    department = st.text_input("College/Department")
     reporting_manager = st.text_input("Reporting Manager")
-    salary = st.text_input("Monthly Salary (AED)")
-    probation_period = st.text_input("Probation Period (in months)", value="6")
-    is_international = st.checkbox("International Hire", value=True)
+    total_salary = st.text_input("Total Monthly Salary (AED)")
+    probation = st.text_input("Probation Period (in months)", value="6")
+
+    # Contract Logic Drivers
+    rank = st.selectbox("Rank (Job Title)", [
+        "Professor", "Associate Professor", "Assistant Professor", "Lecturer", "Senior Instructor", "Instructor"
+    ])
+
+    campus = st.selectbox("Campus", ["Al Ain", "Abu Dhabi", "Dubai"])
+    marital_status = st.selectbox("Marital Status", ["Married", "Single"])
+
     submitted = st.form_submit_button("Generate Contract")
 
     if submitted:
-        profile_key = f"{designation}|{campus}|{marital_status}"
+        profile_key = f"{rank} – {campus} – {marital_status}"
         benefits = benefits_data.get(profile_key, {})
 
-        # Load the contract template
-        template_path = "Faculty_Offer_Template.docx"
-        doc = Document(template_path)
-
-        # Replace placeholders
-        placeholders = {
-            "{{salutation}}": f"{designation} {candidate_name}",
-            "{{candidate_id}}": candidate_id,
-            "{{phone}}": phone,
-            "{{email}}": email,
-            "{{designation}}": designation,
-            "{{position_title}}": college,
-            "{{reporting_manager}}": reporting_manager,
-            "{{salary}}": salary,
-            "{{probation_period}}": probation_period,
-            "{{housing_allowance}}": str(benefits.get("housing_allowance", "")),
-            "{{furniture_allowance}}": str(benefits.get("furniture_allowance", "")),
-            "{{school_allowance}}": str(benefits.get("school_allowance", "")),
-            "{{annual_leave}}": str(benefits.get("annual_leave_days", "")),
-            "{{relocation_allowance}}": str(benefits.get("relocation_allowance", "")),
-            "{{repatriation_allowance}}": str(benefits.get("repatriation_allowance", "")),
-            "{{joining_ticket}}": benefits.get("joining_ticket", ""),
-            "{{health_insurance}}": benefits.get("health_insurance", ""),
-            "{{tuition_employee}}": benefits.get("tuition_waiver", {}).get("employee", ""),
-            "{{tuition_dependent}}": benefits.get("tuition_waiver", {}).get("dependent", ""),
-            "{{tuition_family}}": benefits.get("tuition_waiver", {}).get("family", ""),
-            "{{joining_ticket_if}}": benefits.get("joining_ticket", "") if is_international else "N/A",
-            "{{contract_date}}": datetime.datetime.today().strftime('%d %B %Y')
+        # --- Fill contract placeholders ---
+        context = {
+            "salutation": f"{position_title} {name}",
+            "emp_id": emp_id,
+            "email": email,
+            "phone": phone,
+            "position_title": department,
+            "designation": position_title,
+            "reporting_manager": reporting_manager,
+            "total_salary": total_salary,
+            "probation": probation,
+            "joining_ticket": benefits.get("Joining Ticket", "N/A"),
+            "housing_allowance": benefits.get("Housing Allowance", "N/A"),
+            "furniture_allowance": benefits.get("Furniture Allowance", "N/A"),
+            "school_allowance": benefits.get("Children School Allowance", "N/A"),
+            "tuition_discount": benefits.get("Tuition Waiver Discount", "N/A"),
+            "annual_ticket": benefits.get("Annual Ticket", "N/A"),
+            "relocation_allowance": benefits.get("Relocation Allowance", "N/A"),
+            "repatriation_allowance": benefits.get("Repatriation Allowance", "N/A"),
+            "repatriation_ticket": benefits.get("Repatriation Ticket", "N/A"),
+            "health_insurance": benefits.get("Health Insurance", "N/A"),
+            "annual_leave": benefits.get("Annual Leave", "N/A"),
         }
 
-        for p in doc.paragraphs:
-            for key, value in placeholders.items():
-                if key in p.text:
-                    inline = p.runs
-                    for i in range(len(inline)):
-                        if key in inline[i].text:
-                            inline[i].text = inline[i].text.replace(key, str(value))
+        final_doc = generate_contract(context)
+        byte_io = BytesIO()
+        final_doc.save(byte_io)
+        byte_io.seek(0)
 
-        # Save to buffer
-        buffer = BytesIO()
-        doc.save(buffer)
-        buffer.seek(0)
-
-        st.success("Contract generated successfully!")
-        st.download_button(
-            label="📥 Download Contract",
-            data=buffer,
-            file_name=f"Contract_{candidate_name}.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-
-
+        st.success("Contract generated successfully! Download below:")
+        st.download_button(label="📥 Download Contract", data=byte_io, file_name=f"{name}_Contract.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
