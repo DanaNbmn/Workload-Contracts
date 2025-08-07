@@ -1,87 +1,87 @@
 import streamlit as st
 from docx import Document
 from io import BytesIO
-import datetime
 import json
+import datetime
 
-# Load benefit mappings
-with open("benefits_by_profile.json", "r") as f:
-    benefit_data = json.load(f)
+# Load benefits data
+@st.cache_data
+def load_benefits():
+    with open("/mnt/data/benefits_by_profile.json", "r") as f:
+        return json.load(f)
 
-# Load the contract template
-TEMPLATE_PATH = "/mnt/data/Updated_Faculty_Offer_Template.docx"
+benefits_data = load_benefits()
 
-def generate_contract(data):
-    doc = Document(TEMPLATE_PATH)
-    for p in doc.paragraphs:
-        for key, value in data.items():
-            if f"{{{{{key}}}}}" in p.text:
-                inline = p.runs
-                for i in range(len(inline)):
-                    if f"{{{{{key}}}}}" in inline[i].text:
-                        inline[i].text = inline[i].text.replace(f"{{{{{key}}}}}", str(value))
-    return doc
+# UI Inputs
+st.title("📄 Faculty Contract Generator")
+st.markdown("Automatically generates contract with benefits based on role, campus, and marital status.")
 
-st.title("🎓 ADU Faculty Contract Generator")
-
-# Input form
 with st.form("contract_form"):
-    st.subheader("Employee Information")
     candidate_id = st.text_input("Candidate ID")
-    date_today = datetime.date.today().strftime("%d-%m-%Y")
-    name = st.text_input("Candidate Name")
+    candidate_name = st.text_input("Candidate Name")
     phone = st.text_input("Phone Number")
     email = st.text_input("Email ID")
-    designation = st.selectbox("Designation (Rank)", [
-        "Professor", "Associate Professor / Sr. Lecturer", "Assistant Professor / Lecturer",
-        "Senior Instructor", "Instructor"
-    ])
-    department = st.text_input("College/Department")
+    designation = st.selectbox("Designation (Rank)", ["Professor", "Senior Instructor"])
+    marital_status = st.selectbox("Marital Status", ["Married", "Single"])
+    campus = st.selectbox("Campus", ["Al Ain", "AD/Dubai"])
+    college = st.text_input("College or Department")
     reporting_manager = st.text_input("Reporting Manager")
     salary = st.text_input("Monthly Salary (AED)")
-    probation = st.text_input("Probation Period (Months)", value="6")
-
-    st.subheader("Employment Context")
-    campus = st.selectbox("Campus", ["Al Ain", "AD/Dubai"])
-    marital_status = st.selectbox("Marital Status", ["Married", "Single"])
-    is_international = st.radio("International Hire?", ["Yes", "No"])
-
+    probation_period = st.text_input("Probation Period (in months)", value="6")
+    is_international = st.checkbox("International Hire", value=True)
     submitted = st.form_submit_button("Generate Contract")
 
     if submitted:
-        key = f"{designation}|{campus}|{marital_status}"
-        benefits = benefit_data.get(key, {})
+        profile_key = f"{designation}|{campus}|{marital_status}"
+        benefits = benefits_data.get(profile_key, {})
 
-        # Compose the dynamic inputs
-        context = {
-            "candidate_id": candidate_id,
-            "date": date_today,
-            "name": name,
-            "phone": phone,
-            "email": email,
-            "designation": designation,
-            "position_title": department,
-            "reporting_manager": reporting_manager,
-            "salary": salary,
-            "probation": probation,
-            "housing_allowance": benefits.get("housing_allowance", "N/A"),
-            "furniture_allowance": benefits.get("furniture_allowance", "N/A"),
-            "education_allowance": benefits.get("education_allowance", "N/A"),
-            "annual_leave_days": benefits.get("annual_leave_days", "N/A"),
-            "repatriation_allowance": benefits.get("repatriation_allowance", "N/A"),
-            "international_joining": "commencement" if is_international == "Yes" else "",
+        # Load the contract template
+        template_path = "/mnt/data/Faculty_Offer_Template.docx"
+        doc = Document(template_path)
+
+        # Replace placeholders
+        placeholders = {
+            "{{salutation}}": f"{designation} {candidate_name}",
+            "{{candidate_id}}": candidate_id,
+            "{{phone}}": phone,
+            "{{email}}": email,
+            "{{designation}}": designation,
+            "{{position_title}}": college,
+            "{{reporting_manager}}": reporting_manager,
+            "{{salary}}": salary,
+            "{{probation_period}}": probation_period,
+            "{{housing_allowance}}": str(benefits.get("housing_allowance", "")),
+            "{{furniture_allowance}}": str(benefits.get("furniture_allowance", "")),
+            "{{school_allowance}}": str(benefits.get("school_allowance", "")),
+            "{{annual_leave}}": str(benefits.get("annual_leave_days", "")),
+            "{{relocation_allowance}}": str(benefits.get("relocation_allowance", "")),
+            "{{repatriation_allowance}}": str(benefits.get("repatriation_allowance", "")),
+            "{{joining_ticket}}": benefits.get("joining_ticket", ""),
+            "{{health_insurance}}": benefits.get("health_insurance", ""),
+            "{{tuition_employee}}": benefits.get("tuition_waiver", {}).get("employee", ""),
+            "{{tuition_dependent}}": benefits.get("tuition_waiver", {}).get("dependent", ""),
+            "{{tuition_family}}": benefits.get("tuition_waiver", {}).get("family", ""),
+            "{{joining_ticket_if}}": benefits.get("joining_ticket", "") if is_international else "N/A",
+            "{{contract_date}}": datetime.datetime.today().strftime('%d %B %Y')
         }
 
-        final_doc = generate_contract(context)
-        byte_io = BytesIO()
-        final_doc.save(byte_io)
-        byte_io.seek(0)
+        for p in doc.paragraphs:
+            for key, value in placeholders.items():
+                if key in p.text:
+                    inline = p.runs
+                    for i in range(len(inline)):
+                        if key in inline[i].text:
+                            inline[i].text = inline[i].text.replace(key, str(value))
 
-        st.success("✅ Contract generated successfully!")
+        # Save to buffer
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        st.success("Contract generated successfully!")
         st.download_button(
             label="📥 Download Contract",
-            data=byte_io,
-            file_name=f"{candidate_id}_{name}_Contract.docx",
+            data=buffer,
+            file_name=f"Contract_{candidate_name}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-
