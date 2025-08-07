@@ -1,10 +1,8 @@
-# Enhancing the Streamlit app code to include campus, rank, and marital status logic for benefit eligibility
-
-updated_code = """
 import streamlit as st
 from docx import Document
 from io import BytesIO
 import datetime
+import os
 
 TEMPLATE_PATH = "Faculty_Offer_Letter_Template_Final_Format.docx"
 
@@ -19,14 +17,6 @@ def generate_contract(data):
                         inline[i].text = inline[i].text.replace(f"{{{{{key}}}}}", str(value))
     return doc
 
-def determine_furniture_allowance(campus, rank, marital_status):
-    if campus == "Al Ain" and marital_status == "Married":
-        return "AED 30,000"
-    elif rank == "Professor":
-        return "AED 25,000"
-    else:
-        return "AED 20,000"
-
 st.title("📄 Faculty Offer Letter Generator")
 
 with st.form("offer_form"):
@@ -38,15 +28,10 @@ with st.form("offer_form"):
     department = st.text_input("Department")
     reports_to = st.text_input("Reports To")
     total_comp = st.text_input("Total Monthly Compensation (AED)", "15000")
-    campus = st.selectbox("Campus", ["Abu Dhabi", "Al Ain", "Other"])
-    rank = st.selectbox("Faculty Rank", ["Assistant Professor", "Associate Professor", "Professor"])
-    marital_status = st.selectbox("Marital Status", ["Single", "Married"])
     date_today = st.date_input("Contract Date", value=datetime.date.today())
     submitted = st.form_submit_button("Generate Offer Letter")
 
 if submitted:
-    furniture_allowance = determine_furniture_allowance(campus, rank, marital_status)
-
     fields = {
         "Candidate_ID": candidate_id,
         "Candidate_Name": candidate_name,
@@ -56,9 +41,8 @@ if submitted:
         "Department": department,
         "Reports_To": reports_to,
         "Total_Compensation": total_comp,
-        "Date": date_today.strftime("%d %B %Y"),
-        "Furniture_Allowance": furniture_allowance
-   }
+        "Date": date_today.strftime("%d %B %Y")
+    }
 
     try:
         final_doc = generate_contract(fields)
@@ -75,3 +59,4 @@ if submitted:
         )
     except Exception as e:
         st.error(f"❌ Error generating contract: {str(e)}")
+
