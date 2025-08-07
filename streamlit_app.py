@@ -7,7 +7,7 @@ import datetime
 # Load benefits data
 @st.cache_data
 def load_benefits():
-    with open("benefits_by_profile.json", "r") as f:
+    with open("/mnt/data/benefits_by_profile.json", "r") as f:
         return json.load(f)
 
 benefits_data = load_benefits()
@@ -85,4 +85,3 @@ with st.form("contract_form"):
             file_name=f"Contract_{candidate_name}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-
