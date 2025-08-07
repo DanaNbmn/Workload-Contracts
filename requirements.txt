@@ -1,5 +1,3 @@
 streamlit
-Document
-BytesIO
-json
-datetime
+pandas
+python-docx
