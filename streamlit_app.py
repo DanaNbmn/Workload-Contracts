@@ -9,7 +9,7 @@ with open("benefits_by_profile.json", "r") as f:
     benefit_data = json.load(f)
 
 # Load the contract template
-TEMPLATE_PATH = "/mnt/data/Updated_Faculty_Offer_Template.docx"
+TEMPLATE_PATH = "Updated_Faculty_Offer_Template.docx"
 
 def generate_contract(data):
     doc = Document(TEMPLATE_PATH)
@@ -84,4 +84,5 @@ with st.form("contract_form"):
             file_name=f"{candidate_id}_{name}_Contract.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+
 
