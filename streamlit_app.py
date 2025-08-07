@@ -1,55 +1,69 @@
+# Prepare the Streamlit app code as a downloadable .py file
+streamlit_code = '''
+import streamlit as st
 from docx import Document
-from docx.shared import Inches
-from docx.enum.section import WD_SECTION
+import datetime
+import base64
+from io import BytesIO
 
-# Recreate the Word document
-doc = Document()
+st.title("Faculty Offer Letter Generator")
 
-# Set margins
-section = doc.sections[0]
-section.top_margin = Inches(1)
-section.bottom_margin = Inches(1)
+# User inputs
+candidate_name = st.text_input("Candidate Name")
+candidate_email = st.text_input("Candidate Email")
+candidate_phone = st.text_input("Candidate Phone")
+employee_id = st.text_input("Employee ID")
+position_title = st.text_input("Position Title")
+college_name = st.text_input("College Name")
+department_name = st.text_input("Department Name")
+campus_location = st.selectbox("Campus Location", ["Abu Dhabi", "Al Ain"])
+offer_date = st.date_input("Offer Date", value=datetime.date.today())
+total_compensation = st.text_input("Total Compensation (AED)")
+housing_allowance = st.text_input("Housing Allowance (AED)")
+furniture_allowance_clause = st.text_area("Furniture Allowance Clause")
 
-# Add logo to header
-header = section.header
-header_paragraph = header.paragraphs[0]
-run = header_paragraph.add_run()
-run.add_picture("/mnt/data/Logo.png", width=Inches(1.2))
+# Load and fill Word template
+def generate_contract():
+    doc = Document("Faculty_Offer_Letter_Template_Final_Footer.docx")
+    for p in doc.paragraphs:
+        inline_replace(p, {
+            "{{Candidate_Name}}": candidate_name,
+            "{{Candidate_Email}}": candidate_email,
+            "{{Candidate_Phone}}": candidate_phone,
+            "{{Employee_ID}}": employee_id,
+            "{{Position_Title}}": position_title,
+            "{{College_Name}}": college_name,
+            "{{Department_Name}}": department_name,
+            "{{Campus_Location}}": campus_location,
+            "{{Offer_Date}}": offer_date.strftime("%d-%m-%Y"),
+            "{{Total_Compensation}}": total_compensation,
+            "{{Housing_Allowance}}": housing_allowance,
+            "{{Furniture_Allowance_Clause}}": furniture_allowance_clause
+        })
+    return doc
 
-# Add footer with wide banner image
-footer = section.footer
-footer_paragraph = footer.paragraphs[0]
-footer_paragraph.alignment = 1  # Center
-run = footer_paragraph.add_run()
-run.add_picture("/mnt/data/08137723-09f6-4a2c-808f-98a34237e62b.png", width=Inches(6.5))
+def inline_replace(paragraph, replacements):
+    for key, val in replacements.items():
+        if key in paragraph.text:
+            inline = paragraph.runs
+            for i in range(len(inline)):
+                if key in inline[i].text:
+                    inline[i].text = inline[i].text.replace(key, val)
 
-# Add contract body with placeholders
-doc.add_paragraph("Ref: TEG/{{Employee_ID}}")
-doc.add_paragraph("Date: {{Offer_Date}}")
-doc.add_paragraph("{{Candidate_Name}}\nTel no: {{Candidate_Phone}}\nEmail ID: {{Candidate_Email}}")
+# Generate and download button
+if st.button("Generate Contract"):
+    final_doc = generate_contract()
+    buffer = BytesIO()
+    final_doc.save(buffer)
+    buffer.seek(0)
+    b64 = base64.b64encode(buffer.read()).decode()
+    href = f'<a href="data:application/octet-stream;base64,{b64}" download="Faculty_Offer_Letter.docx">📄 Download Offer Letter</a>'
+    st.markdown(href, unsafe_allow_html=True)
+'''
 
-doc.add_paragraph("""
-Dear Dr.,
+# Save the code to a Python file
+streamlit_file_path = "/mnt/data/faculty_contract_generator_app.py"
+with open(streamlit_file_path, "w") as f:
+    f.write(streamlit_code)
 
-Abu Dhabi University (ADU) is pleased to offer you a contract of employment for an Assistant Professor in {{Position_Title}} position in the {{College_Name}} based in {{Campus_Location}}, UAE. This position reports to the Dean/Chair of {{Department_Name}}. Your first day of employment with the Abu Dhabi University will be based on the availability of legal approvals and the term of your contract shall be limited to a period of two years, renewable upon mutual agreement.
-""")
-
-doc.add_paragraph("1. Package:")
-doc.add_paragraph("Your total monthly compensation will be AED {{Total_Compensation}}. In addition, the following terms, conditions and benefits apply:")
-doc.add_paragraph("1.1. Basic Salary (50%) and Other Allowance (50%) paid at the end of each calendar month.")
-doc.add_paragraph("1.2. The first 6 (six) months period from the start date shall be deemed to be the Probationary Period.")
-doc.add_paragraph("1.3. Housing Allowance: A housing allowance of AED {{Housing_Allowance}} per annum will be provided if university accommodation is not available.")
-doc.add_paragraph("1.4. Furniture Allowance: {{Furniture_Allowance_Clause}}")
-doc.add_paragraph("1.5. Annual Leave Tickets: Cash in lieu of economy class air tickets for you, spouse, and up to 2 children under 21 years residing in the UAE.")
-doc.add_paragraph("1.6. Joining and Repatriation Tickets: Economy class air tickets for you and your eligible dependents upon commencement and repatriation.")
-doc.add_paragraph("1.7. Relocation and Repatriation Allowance: AED 3,000 each for relocation and repatriation, reimbursed based on receipts.")
-doc.add_paragraph("1.8. Medical Insurance: Provided for you, your spouse, and up to 3 dependent children under 21 years of age.")
-doc.add_paragraph("1.9. Annual Leave: 56 calendar days of paid leave per academic year.")
-doc.add_paragraph("1.10. Tuition Fees Subsidy: AED 25,000 per eligible child (up to AED 50,000 per family) for UAE-based schooling.")
-doc.add_paragraph("1.11. ADU Tuition Waiver: 75% for self, 50% for dependents, 25% for immediate family, post one year of service.")
-doc.add_paragraph("1.12. End of Service Gratuity: One month’s basic salary per year of service, pro-rated (minimum one year of service required).")
-
-# Save final document
-file_path = "/mnt/data/Faculty_Offer_Letter_Template_Final_Footer.docx"
-doc.save(file_path)
-file_path
+streamlit_file_path
