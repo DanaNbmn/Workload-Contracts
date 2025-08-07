@@ -58,7 +58,7 @@ if submitted:
         "Total_Compensation": total_comp,
         "Date": date_today.strftime("%d %B %Y"),
         "Furniture_Allowance": furniture_allowance
-    }
+   }
 
     try:
         final_doc = generate_contract(fields)
@@ -75,11 +75,3 @@ if submitted:
         )
     except Exception as e:
         st.error(f"❌ Error generating contract: {str(e)}")
-"""
-
-# Save the updated code to file
-updated_code_path = "/mnt/data/faculty_offer_letter_generator_with_benefits.py"
-with open(updated_code_path, "w") as f:
-    f.write(updated_code)
-
-updated_code_path
