@@ -1,80 +1,84 @@
 import streamlit as st
-from docxtpl import DocxTemplate, InlineImage
-from docx.shared import Mm
-import datetime
-import os
+import pandas as pd
+from docx import Document
 from io import BytesIO
 
-st.set_page_config(page_title="ADU Contract Generator", layout="centered")
+# ----------------- Benefit Logic Table -----------------
+def get_faculty_benefits(grade, campus, marital_status):
+    table = {
+        # Professor
+        ("Professor", "Abu Dhabi / Dubai", "Single"):  {"HOUSING_ALLOWANCE": 45000, "FURNITURE_ALLOWANCE": 20000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Professor", "Abu Dhabi / Dubai", "Married"): {"HOUSING_ALLOWANCE": 60000, "FURNITURE_ALLOWANCE": 30000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Professor", "Al Ain", "Single"):             {"HOUSING_ALLOWANCE": 35000, "FURNITURE_ALLOWANCE": 20000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Professor", "Al Ain", "Married"):            {"HOUSING_ALLOWANCE": 45000, "FURNITURE_ALLOWANCE": 30000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+
+        # Associate
+        ("Associate / Sr. Lecturer", "Abu Dhabi / Dubai", "Single"):  {"HOUSING_ALLOWANCE": 45000, "FURNITURE_ALLOWANCE": 20000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Associate / Sr. Lecturer", "Abu Dhabi / Dubai", "Married"): {"HOUSING_ALLOWANCE": 60000, "FURNITURE_ALLOWANCE": 30000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Associate / Sr. Lecturer", "Al Ain", "Single"):             {"HOUSING_ALLOWANCE": 35000, "FURNITURE_ALLOWANCE": 20000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+        ("Associate / Sr. Lecturer", "Al Ain", "Married"):            {"HOUSING_ALLOWANCE": 45000, "FURNITURE_ALLOWANCE": 30000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 3000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 56},
+
+        # Instructor
+        ("Instructor", "Abu Dhabi / Dubai", "Single"):  {"HOUSING_ALLOWANCE": 35000, "FURNITURE_ALLOWANCE": 12000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 2000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 42},
+        ("Instructor", "Abu Dhabi / Dubai", "Married"): {"HOUSING_ALLOWANCE": 45000, "FURNITURE_ALLOWANCE": 15000, "SCHOOL_ALLOWANCE": 60000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 2000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 42},
+        ("Instructor", "Al Ain", "Single"):             {"HOUSING_ALLOWANCE": 30000, "FURNITURE_ALLOWANCE": 12000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 2000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 42},
+        ("Instructor", "Al Ain", "Married"):            {"HOUSING_ALLOWANCE": 40000, "FURNITURE_ALLOWANCE": 15000, "SCHOOL_ALLOWANCE": 50000, "TUITION_WAIVER": "75% Emp / 50% Dep / 25% Family", "RELOCATION_ALLOWANCE": 3000, "REPATRIATION_ALLOWANCE": 2000, "HEALTH_INSURANCE": "1+1+3", "ANNUAL_LEAVE_DAYS": 42},
+    }
+    return table.get((grade, campus, marital_status), {})
+
+# ----------------- Generate Word Doc -----------------
+def generate_contract(data, template_path="ADU_Faculty_Contract_Template.docx"):
+    doc = Document(template_path)
+    for p in doc.paragraphs:
+        for key, value in data.items():
+            if f"{{{{{key}}}}}" in p.text:
+                p.text = p.text.replace(f"{{{{{key}}}}}", str(value))
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+# ----------------- UI -----------------
 st.title("📄 ADU Contract Generator")
 
-# --- Upload the ADU Logo ---
-st.subheader("1. Upload ADU Logo (optional)")
-logo_file = st.file_uploader("Upload ADU logo (image)", type=["png", "jpg", "jpeg"])
+# Manual Inputs
+id_number = st.text_input("Faculty ID")
+date = st.date_input("Contract Date")
+name = st.text_input("Candidate Name")
+email = st.text_input("Email ID")
+phone = st.text_input("Phone Number")
+rank = st.selectbox("Faculty Rank", ["Professor", "Associate / Sr. Lecturer", "Instructor"])
+college = st.text_input("College/Department")
+campus = st.selectbox("Campus", ["Abu Dhabi / Dubai", "Al Ain"])
+marital = st.selectbox("Marital Status", ["Single", "Married"])
+dean = st.text_input("Dean/Chair Name")
+salary = st.number_input("Monthly Salary (AED)", step=1000)
 
-# --- Select Employment Offer Type ---
-st.subheader("2. Select Employment Offer Type")
-offer_types = {
-    "Assistant Professor (AA, Married)": "Faculty_AssistantProfessor_AA_Married_Expat.docx",
-    "Associate/Full Professor (AD, Married)": "Faculty_AssociateOrFullProfessor_AD_Married_Expat.docx",
-    "Instructor (AD, Single)": "Faculty_Instructor_AD_Single_Expat.docx",
-    "Staff (Emirati)": "Staff_General_AD_Emirati.docx",
-    "Staff (Expat)": "Staff_General_AD_Expat.docx",
-    "Visiting Faculty – One Semester": "Faculty_Visiting_AssistantProfessor_AlAin.docx"
-}
-selected_offer = st.selectbox("Choose Offer Type", list(offer_types.keys()))
-
-# --- Input Fields ---
-st.subheader("3. Fill in Candidate Information")
-ref_id = st.text_input("Reference ID (Ref:)")
-date = st.date_input("Date", datetime.date.today())
-candidate_name = st.text_input("Candidate Full Name")
-tel = st.text_input("Telephone Number")
-email = st.text_input("Email Address")
-designation = st.selectbox("Salutation", ["Dr.", "Mr.", "Ms.", "Mrs."])
-position_title = st.text_input("Position Title")
-manager = st.text_input("Reports To (Chair/Dean/Manager)")
-salary = st.text_input("Total Monthly Salary (AED)")
-hire_type = st.selectbox("Hire Type", ["Local", "International"])
-
-# --- Generate Contract ---
-st.subheader("4. Generate Offer Letter")
+# Button
 if st.button("Generate Contract"):
-    try:
-        template_path = os.path.join("templates", offer_types[selected_offer])
-        doc = DocxTemplate(template_path)
-
-        context = {
-            "REF": ref_id,
-            "DATE": date.strftime("%d %B %Y"),
-            "NAME": candidate_name,
-            "TEL": tel,
-            "EMAIL": email,
-            "SALUTATION": designation,
-            "POSITION_TITLE": position_title,
-            "MANAGER": manager,
+    benefits = get_faculty_benefits(rank, campus, marital)
+    if benefits:
+        filled_data = {
+            "ID_NUMBER": id_number,
+            "DATE": date.strftime("%d-%b-%Y"),
+            "CANDIDATE_NAME": name,
+            "EMAIL_ID": email,
+            "PHONE_NUMBER": phone,
+            "RANK": rank,
+            "COLLEGE": college,
+            "CAMPUS": campus,
+            "DEAN_CHAIR": dean,
             "SALARY": salary,
-            "HIRE_TYPE": hire_type,
+            **benefits
         }
+        docx_file = generate_contract(filled_data)
+        st.download_button("📥 Download Contract", docx_file, file_name=f"{name}_Faculty_Contract.docx")
+    else:
+        st.error("No benefit rule matched this selection. Please check your input.")
+"""
 
-        if logo_file is not None:
-            image_stream = BytesIO(logo_file.read())
-            context["LOGO"] = InlineImage(doc, image_stream, width=Mm(40))
-        else:
-            context["LOGO"] = ""
+# Save the updated Streamlit contract generator file
+with open("/mnt/data/faculty_contract_generator_full.py", "w") as f:
+    f.write(streamlit_contract_generator_code)
 
-        doc.render(context)
-        output = BytesIO()
-        doc.save(output)
-        output.seek(0)
-
-        st.success("✅ Contract generated successfully!")
-        st.download_button(
-            label="📥 Download Contract (DOCX)",
-            data=output,
-            file_name=f"{candidate_name.replace(' ', '_')}_Contract.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-
-    except Exception as e:
-        st.error(f"❌ Failed to generate contract: {e}")
+"/mnt/data/faculty_contract_generator_full.py"
