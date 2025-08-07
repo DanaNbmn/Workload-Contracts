@@ -66,3 +66,4 @@ with open(streamlit_app_path, "w") as f:
     f.write(streamlit_code)
 
 streamlit_app_path
+
