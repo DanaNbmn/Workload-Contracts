@@ -86,7 +86,7 @@ if submitted:
     }
 
     def generate_contract(data):
-        template_path = "/mnt/data/Faculty_Offer_Template.docx"
+        template_path = "Faculty_Offer_Template.docx"
         doc = Document(template_path)
         for p in doc.paragraphs:
             for key, value in data.items():
@@ -109,3 +109,4 @@ if submitted:
         file_name=f"{name}_Contract.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+
