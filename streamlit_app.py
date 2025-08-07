@@ -1,14 +1,13 @@
-import textwrap
-
-# Streamlit app code as a string
-streamlit_code = textwrap.dedent("""
 import streamlit as st
 from docx import Document
 from io import BytesIO
 import datetime
+import os
+
+TEMPLATE_PATH = "Faculty_Offer_Letter_Template_Final_Format.docx"
 
 def generate_contract(data):
-    doc = Document("Faculty_Offer_Letter_Template_Final_Format.docx")
+    doc = Document(TEMPLATE_PATH)
     for p in doc.paragraphs:
         for key, value in data.items():
             if f"{{{{{key}}}}}" in p.text:
@@ -18,7 +17,7 @@ def generate_contract(data):
                         inline[i].text = inline[i].text.replace(f"{{{{{key}}}}}", str(value))
     return doc
 
-st.title("Faculty Offer Letter Generator")
+st.title("📄 Faculty Offer Letter Generator")
 
 with st.form("offer_form"):
     candidate_id = st.text_input("Candidate ID")
@@ -30,7 +29,6 @@ with st.form("offer_form"):
     reports_to = st.text_input("Reports To")
     total_comp = st.text_input("Total Monthly Compensation (AED)", "15000")
     date_today = st.date_input("Contract Date", value=datetime.date.today())
-
     submitted = st.form_submit_button("Generate Offer Letter")
 
 if submitted:
@@ -45,25 +43,19 @@ if submitted:
         "Total_Compensation": total_comp,
         "Date": date_today.strftime("%d %B %Y")
     }
-    
-    final_doc = generate_contract(fields)
-    buffer = BytesIO()
-    final_doc.save(buffer)
-    buffer.seek(0)
-    
-    st.success("Contract generated successfully!")
-    st.download_button(
-        label="📄 Download Offer Letter",
-        data=buffer,
-        file_name=f"Offer_Letter_{candidate_name.replace(' ', '_')}.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-""")
 
-# Save this code to a file so user can launch easily
-streamlit_app_path = "/mnt/data/faculty_contract_generator_app.py"
-with open(streamlit_app_path, "w") as f:
-    f.write(streamlit_code)
+    try:
+        final_doc = generate_contract(fields)
+        buffer = BytesIO()
+        final_doc.save(buffer)
+        buffer.seek(0)
 
-streamlit_app_path
-
+        st.success("✅ Contract generated successfully!")
+        st.download_button(
+            label="📄 Download Offer Letter",
+            data=buffer,
+            file_name=f"Offer_Letter_{candidate_name.replace(' ', '_')}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    except Exception as e:
+        st.error(f"❌ Error generating contract: {str(e)}")
