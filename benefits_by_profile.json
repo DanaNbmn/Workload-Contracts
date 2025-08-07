@@ -1,4 +1,3 @@
-# Save the benefits mapping as a JSON file for user to download
 import json
 
 benefits = {
