@@ -1,8 +1,4 @@
 streamlit
-pandas
 python-docx
-openpyxl
-json
-Document
-BytesIO
-datetime
+pandas
+jsonschema
