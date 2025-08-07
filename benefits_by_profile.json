@@ -1,0 +1,82 @@
+{
+  "Professor|Al Ain|Married": {
+    "housing_allowance": "45000",
+    "furniture_allowance": "30000",
+    "education_allowance": "50000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Professor|AD/Dubai|Married": {
+    "housing_allowance": "60000",
+    "furniture_allowance": "30000",
+    "education_allowance": "60000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Associate Professor / Sr. Lecturer|Al Ain|Married": {
+    "housing_allowance": "45000",
+    "furniture_allowance": "30000",
+    "education_allowance": "50000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Associate Professor / Sr. Lecturer|AD/Dubai|Married": {
+    "housing_allowance": "60000",
+    "furniture_allowance": "30000",
+    "education_allowance": "60000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Assistant Professor / Lecturer|Al Ain|Married": {
+    "housing_allowance": "45000",
+    "furniture_allowance": "30000",
+    "education_allowance": "50000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Assistant Professor / Lecturer|AD/Dubai|Married": {
+    "housing_allowance": "60000",
+    "furniture_allowance": "30000",
+    "education_allowance": "60000",
+    "annual_leave_days": "56",
+    "repatriation_allowance": "3000",
+    "international_joining": "Joining"
+  },
+  "Senior Instructor|Al Ain|Married": {
+    "housing_allowance": "40000",
+    "furniture_allowance": "15000",
+    "education_allowance": "50000",
+    "annual_leave_days": "42",
+    "repatriation_allowance": "2000",
+    "international_joining": "Joining"
+  },
+  "Senior Instructor|AD/Dubai|Married": {
+    "housing_allowance": "45000",
+    "furniture_allowance": "15000",
+    "education_allowance": "60000",
+    "annual_leave_days": "42",
+    "repatriation_allowance": "2000",
+    "international_joining": "Joining"
+  },
+  "Instructor|Al Ain|Married": {
+    "housing_allowance": "40000",
+    "furniture_allowance": "15000",
+    "education_allowance": "50000",
+    "annual_leave_days": "42",
+    "repatriation_allowance": "2000",
+    "international_joining": "Joining"
+  },
+  "Instructor|AD/Dubai|Married": {
+    "housing_allowance": "45000",
+    "furniture_allowance": "15000",
+    "education_allowance": "60000",
+    "annual_leave_days": "42",
+    "repatriation_allowance": "2000",
+    "international_joining": "Joining"
+  }
+}
